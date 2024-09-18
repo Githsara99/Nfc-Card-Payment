@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-%&dw7dcbx9rbt%hum#t5p!=9p6)z0tahi@%3pz6p894o#u3v#v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['https://githsara99.github.io/Nfc-Card-Payment/','127.0.0.1']
 
 LOGIN_URL = 'creator:login'
 LOGIN_REDIRECT_URL = 'core:index'
