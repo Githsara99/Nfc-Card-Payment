@@ -1,11 +1,12 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
-
+from . import api
 from . import views
 
 app_name = 'creator'
 
 urlpatterns = [
+    path('api/create_support', api.create_support, name='api_create_support'),
     path('mypage/', views.mypage, name="mypage"),
     path('creators/', views.creators, name='creators'),
     path('creators/<int:pk>', views.creator, name='creator'),
