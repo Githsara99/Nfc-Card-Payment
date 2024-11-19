@@ -43,7 +43,11 @@ INSTALLED_APPS = [
     'core',
     'creator',
     'cryptomus',
+    'crispy_forms',
+    "crispy_tailwind",
 ]
+
+CRISPY_TEMPLATE_PACK = "tailwind"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -60,7 +64,7 @@ ROOT_URLCONF = 'gateway.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

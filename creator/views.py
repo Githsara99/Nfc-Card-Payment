@@ -187,12 +187,12 @@
 
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
 from cryptomus import Client
-from .forms import CreateForm
-from .models import Creator, Support, UserProfile, Ticket, ReloadCard, BitcoinTransaction
+from .forms import CreateForm, PassengerForm
+from .models import Creator, Support, UserProfile, Ticket, ReloadCard, BitcoinTransaction, Passenger
 import pyrebase
 import uuid
 
@@ -215,47 +215,46 @@ firebase = pyrebase.initialize_app(config)
 authe = firebase.auth()
 database = firebase.database()
 
-
+@csrf_exempt
 @login_required
 def create_bitcoin_transaction(request):
-    """Creates a Bitcoin transaction and generates a payment link using Cryptomus."""
+    """Handles the submission of a new Bitcoin transaction."""
     if request.method == "POST":
         try:
+            user = request.user
+            transaction_id = request.POST.get('transaction_id', '').strip()
             amount = float(request.POST.get('amount', 0))
-            if amount <= 0:
-                return JsonResponse({'success': False, 'error': 'Invalid amount'})
+            status = request.POST.get('status', '').strip()
 
-            # Create a Bitcoin transaction in the database
-            transaction = BitcoinTransaction.objects.create(
-                user=request.user,
-                transaction_id=str(uuid.uuid4()),
+            if not transaction_id or amount <= 0 or status not in ['Pending', 'Completed', 'Failed']:
+                return JsonResponse({'success': False, 'error': 'Invalid input values'})
+
+            # Create the Bitcoin transaction
+            BitcoinTransaction.objects.create(
+                user=user,
+                transaction_id=transaction_id,
                 amount=amount,
-                status='Pending'
+                status=status
             )
 
-            # Create a payment link using Cryptomus API
-            cryptomus_response = payment_client.create({
-                "order_id": transaction.transaction_id,
-                "amount": str(amount),
-                "currency": "BTC",  # Supported currencies include BTC, USDT, etc.
-                "callback_url": "http://127.0.0.1:8000/api/cryptomus_callback/",  # Update with your callback URL
-                "success_url": "http://127.0.0.1:8000/bitcoin_transactions/",
-                "fail_url": "http://127.0.0.1:8000/bitcoin_transactions/",
-            })
-
-            if 'url' in cryptomus_response:
-                payment_url = cryptomus_response['url']
-
-                # Save the Cryptomus UUID in the transaction
-                transaction.cryptomus_uuid = cryptomus_response['uuid']
-                transaction.save()
-
-                return JsonResponse({'success': True, 'transaction_id': transaction.transaction_id, 'payment_url': payment_url})
-
-            return JsonResponse({'success': False, 'error': 'Failed to generate payment link.'})
-
+            return JsonResponse({'success': True})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+    elif request.method == "GET":
+        # Return an appropriate message or redirect for GET requests
+        return JsonResponse({'success': False, 'error': 'GET method is not allowed for this endpoint'})
+    else:
+        # Return HTTP 405 Method Not Allowed for unsupported methods
+        return HttpResponseNotAllowed(['POST'])
+
+
+
+@login_required
+def bitcoin_transactions(request):
+    """Displays Bitcoin transactions for the logged-in user."""
+    return render(request, 'creator/bitcoin.html', {
+        'user': request.user,
+    })
 
 
 @csrf_exempt
@@ -280,13 +279,6 @@ def cryptomus_callback(request):
             return JsonResponse({'success': False, 'error': 'Transaction not found'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-
-
-@login_required
-def bitcoin_transactions(request):
-    """Displays Bitcoin transactions for the logged-in user."""
-    return render(request, 'creator/bitcoin.html', {'user': request.user})
-
 
 
 def firebase(request):
@@ -406,3 +398,34 @@ def edit(request):
         'form': form
     })
     
+
+
+def passenger_list(request):
+    context = {'passenger_list': Passenger.objects.all()}
+    return render(request, 'creator/passenger_list.html', context)
+
+def passenger_form(request, id=0):
+    if request.method == 'GET':
+        if id == 0:
+            form = PassengerForm()
+        else:
+            passenger = Passenger.objects.get(pk=id)
+            form = PassengerForm(instance=passenger)
+        return render(request, 'creator/passenger_form.html', {"form": form})  # Handles both GET and POST
+     
+    else:
+        if id == 0:
+            form = PassengerForm(request.POST)
+        else:
+            passenger = Passenger.objects.get(pk=id)
+            form = PassengerForm(request.POST, instance=passenger)
+        if form.is_valid():
+            form.save()
+            return redirect('creator:passenger_list')
+    return render(request, 'creator/passenger_form.html', {"form": form})  # Handles both GET and POST
+ 
+
+def passenger_delete(request, id):
+    passenger = Passenger.objects.get(pk=id)
+    passenger.delete()
+    return redirect('creator:passenger_list')

@@ -37,10 +37,15 @@ from . import views
 app_name = 'creator'
 
 urlpatterns = [
+    #sample
+    path('create/', views.passenger_form, name="passenger_insert"),
+    path('list/', views.passenger_list, name="passenger_list"),
+    path('<int:id>/', views.passenger_form, name="passenger_update"),
+    path('delete/<int:id>', views.passenger_delete, name="passenger_delete"),
     # Existing paths
     path('api/create_support', api.create_support, name='api_create_support'),
     path('mypage/', views.mypage, name="mypage"),
-    path('creators/', views.creators, name='creators'),
+    path('mypage/', views.creators, name='creators'),
     path('creators/<int:pk>', views.creator, name='creator'),
     path('creators/<int:creator_id>/success/<int:support_id>', views.support_success, name='success'),
     path('edit/', views.edit, name='edit'),

@@ -21,10 +21,27 @@
 
 
 from django.forms import ModelForm
-from .models import Creator
- 
+from .models import Creator, Passenger
+from django import forms 
  
 class CreateForm(ModelForm):
     class Meta:
         model = Creator
         fields = ('title', 'description', 'image',)
+
+class PassengerForm(forms.ModelForm):
+    class Meta:
+        model = Passenger
+        fields = ('name', 'card_id', 'mobile', 'recharge', 'famount', 'balance',)
+        labels ={
+            'name':'Name',
+            'card_id':'Card ID',
+            'mobile':'Mobile',
+            'recharge':'Recharge',
+            'famount':'Final Amount',
+            'balance':'Balance',   
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super(PassengerForm,self).__init__(*args, **kwargs)
+        self.fields['card_id'].required = False
