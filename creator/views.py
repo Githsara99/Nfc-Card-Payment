@@ -191,8 +191,8 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
 from cryptomus import Client
-from .forms import CreateForm, PassengerForm
-from .models import Creator, Support, UserProfile, Ticket, ReloadCard, BitcoinTransaction, Passenger
+from .forms import CreateForm, PassengerForm, PassengerRegForm
+from .models import Creator, Support, UserProfile, Ticket, ReloadCard, BitcoinTransaction, Passenger, Passenger_Reg
 import pyrebase
 import uuid
 
@@ -429,3 +429,34 @@ def passenger_delete(request, id):
     passenger = Passenger.objects.get(pk=id)
     passenger.delete()
     return redirect('creator:passenger_list')
+
+
+def reg_passenger_list(request):
+    context = {'reg_passenger_list': Passenger_Reg.objects.all()}
+    return render(request, 'creator/reg_passenger_list.html', context)
+
+def reg_passenger_form(request, id=0):
+    if request.method == 'GET':
+        if id == 0:
+            form = PassengerRegForm()
+        else:
+            passenger = Passenger_Reg.objects.get(pk=id)
+            form = PassengerRegForm(instance=passenger)
+        return render(request, 'creator/passenger_reg.html', {"form": form})  # Handles both GET and POST
+     
+    else:
+        if id == 0:
+            form = PassengerRegForm(request.POST)
+        else:
+            passenger = Passenger_Reg.objects.get(pk=id)
+            form = PassengerRegForm(request.POST, instance=passenger)
+        if form.is_valid():
+            form.save()
+            return redirect('creator:reg_passenger_list')
+    return render(request, 'creator/passenger_reg.html', {"form": form})  # Handles both GET and POST
+ 
+
+def reg_passenger_delete(request, id):
+    passenger = Passenger_Reg.objects.get(pk=id)
+    passenger.delete()
+    return redirect('creator:reg_passenger_list')
